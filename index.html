@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Debt Payment Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 700px;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            color: #4a4a4a;
+            margin-bottom: 10px;
+        }
+        .card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="number"], select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: orangered;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: green;
+        }
+        #custom-order {
+            display: none;
+        }
+        .add-card-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .add-card-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Credit Card Debt Payment Calculator</h1>
+        <form id="debt-form" action="calculate.php" method="POST">
+            <div class="section card-details">
+                <h2>Credit Card Details</h2>
+                <div id="cards-container">
+                    <div class="card">
+                        <label for="card1-name">Card 1 Name:</label>
+                        <input type="text" id="card1-name" name="cards[0][name]" required>
+                        
+                        <label for="card1-balance">Total Debt Amount:</label>
+                        <input type="number" id="card1-balance" name="cards[0][balance]" step="0.01" required>
+
+                        <label for="card1-interest">Interest Rate (%):</label>
+                        <input type="number" id="card1-interest" name="cards[0][interest_rate]" step="0.01" required>
+
+                        <label for="card1-min-payment">Minimum Payment:</label>
+                        <input type="number" id="card1-min-payment" name="cards[0][min_payment]" step="0.01" required>
+                    </div>
+                    <!-- Additional cards will be added here dynamically -->
+                </div>
+                <div class="add-card-btn" id="add-card-btn">Add Another Card</div>
+            </div>
+            <div class="section payment-options">
+                <h2>Payment Options</h2>
+                <label for="additional-payment">Additional Monthly Payment:</label>
+                <input type="number" id="additional-payment" name="additional_payment" step="0.01" required>
+
+                <label for="payment-strategy">Payment Strategy:</label>
+                <select id="payment-strategy" name="payment_strategy" required>
+                    <option value="snowball">Snowball Method (Lowest Balance First)</option>
+                    <option value="avalanche">Avalanche Method (Highest Interest First)</option>
+                    <option value="custom">Custom Allocation</option>
+                </select>
+            </div>
+            <div class="section" id="custom-order">
+                <h2>Custom Payment Order</h2>
+                <label for="custom-order-input">Enter Custom Order (comma-separated card numbers):</label>
+                <input type="text" id="custom-order-input" name="custom_order">
+            </div>
+            <button type="submit">Calculate</button>
+        </form>
+        <div id="results"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const paymentStrategySelect = document.getElementById('payment-strategy');
+            const customOrderDiv = document.getElementById('custom-order');
+            const addCardBtn = document.getElementById('add-card-btn');
+            const cardsContainer = document.getElementById('cards-container');
+
+            paymentStrategySelect.addEventListener('change', (event) => {
+                if (event.target.value === 'custom') {
+                    customOrderDiv.style.display = 'block';
+                } else {
+                    customOrderDiv.style.display = 'none';
+                }
+            });
+
+            let cardIndex = 1;
+            addCardBtn.addEventListener('click', () => {
+                cardIndex++;
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card';
+                cardDiv.innerHTML = `
+                    <label for="card${cardIndex}-name">Card ${cardIndex} Name:</label>
+                    <input type="text" id="card${cardIndex}-name" name="cards[${cardIndex - 1}][name]" required>
+
+                    <label for="card${cardIndex}-balance">Total Debt Amount:</label>
+                    <input type="number" id="card${cardIndex}-balance" name="cards[${cardIndex - 1}][balance]" step="0.01" required>
+
+                    <label for="card${cardIndex}-interest">Interest Rate (%):</label>
+                    <input type="number" id="card${cardIndex}-interest" name="cards[${cardIndex - 1}][interest_rate]" step="0.01" required>
+
+                    <label for="card${cardIndex}-min-payment">Minimum Payment:</label>
+                    <input type="number" id="card${cardIndex}-min-payment" name="cards[${cardIndex - 1}][min_payment]" step="0.01" required>
+                `;
+                cardsContainer.appendChild(cardDiv);
+            });
+        });
+    </script>
+</body>
+</html>
